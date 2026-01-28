@@ -1,16 +1,17 @@
 import React, { useState } from 'react';
 import './ProductList.css';
 import CartItem from './CartItem';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { addItem } from './CartSlice';
 
 function ProductList({ onHomeClick }) {
   const dispatch = useDispatch();
+  const cartItems = useSelector((state) => state.cart?.items || []);
   const [showCart, setShowCart] = useState(false);
-  const [showPlants, setShowPlants] = useState(false);
   const [addedToCart, setAddedToCart] = useState({});
 
   const handleAddToCart = (product) => {
+    // Ensure product has name, image, cost
     dispatch(addItem(product));
     setAddedToCart((prevState) => ({
       ...prevState,
@@ -19,29 +20,34 @@ function ProductList({ onHomeClick }) {
   };
 
   const handleHomeClick = (e) => {
-    e.preventDefault();
-    onHomeClick();
+    e && e.preventDefault && e.preventDefault();
+    if (typeof onHomeClick === 'function') onHomeClick();
   };
 
   const handleCartClick = (e) => {
-    e.preventDefault();
+    e && e.preventDefault && e.preventDefault();
     setShowCart(true);
   };
 
   const handlePlantsClick = (e) => {
-    e.preventDefault();
-    setShowPlants(true);
+    e && e.preventDefault && e.preventDefault();
     setShowCart(false);
   };
 
   const handleContinueShopping = (e) => {
-    e.preventDefault();
+    e && e.preventDefault && e.preventDefault();
     setShowCart(false);
   };
 
+  const calculateTotalQuantity = () => {
+    return cartItems.reduce((total, item) => total + (item.quantity || 0), 0);
+  };
+
+  const totalQuantity = calculateTotalQuantity();
+
   const styleObj = {
     backgroundColor: '#4CAF50',
-    color: '#fff!important',
+    color: '#fff',
     padding: '15px',
     display: 'flex',
     justifyContent: 'space-between',
@@ -284,37 +290,64 @@ function ProductList({ onHomeClick }) {
             </a>
           </div>
         </div>
+
         <div style={styleObjUl}>
           <div><a href="#" onClick={handlePlantsClick} style={styleA}>Plants</a></div>
-          <div><a href="#" onClick={handleCartClick} style={styleA}>
-            <h1 className='cart'>
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" height="68" width="68">
-                <rect width="156" height="156" fill="none"></rect>
-                <circle cx="80" cy="216" r="12"></circle>
-                <circle cx="184" cy="216" r="12"></circle>
-                <path d="M42.3,72H221.7l-26.4,92.4A15.9,15.9,0,0,1,179.9,176H84.1a15.9,15.9,0,0,1-15.4-11.6L32.5,37.8A8,8,0,0,0,24.8,32H8" fill="none" stroke="#faf9f9" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"></path>
-              </svg>
-            </h1>
-          </a></div>
+
+          <div style={{ position: 'relative' }}>
+            <a href="#" onClick={handleCartClick} style={styleA}>
+              <h1 className='cart'>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" height="68" width="68">
+                  <rect width="156" height="156" fill="none"></rect>
+                  <circle cx="80" cy="216" r="12"></circle>
+                  <circle cx="184" cy="216" r="12"></circle>
+                  <path d="M42.3,72H221.7l-26.4,92.4A15.9,15.9,0,0,1,179.9,176H84.1a15.9,15.9,0,0,1-15.4-11.6L32.5,37.8A8,8,0,0,0,24.8,32H8" fill="none" stroke="#faf9f9" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"></path>
+                </svg>
+              </h1>
+            </a>
+
+            <span style={{
+              position: 'absolute',
+              top: -6,
+              right: -6,
+              background: '#ff3b30',
+              color: '#fff',
+              borderRadius: '50%',
+              padding: '6px 8px',
+              fontSize: 12,
+              fontWeight: 700
+            }}>
+              {totalQuantity}
+            </span>
+          </div>
         </div>
       </div>
 
       {!showCart ? (
-        <div className="product-grid">
+        <div className="product-grid" style={{ padding: 20 }}>
           {plantsArray.map((category, index) => (
-            <div key={index}>
-              <h1><div>{category.category}</div></h1>
-              <div className="product-list">
+            <div key={index} style={{ marginBottom: 28 }}>
+              <h2 style={{ marginBottom: 12 }}>{category.category}</h2>
+              <div className="product-list" style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
                 {category.plants.map((plant, plantIndex) => (
-                  <div className="product-card" key={plantIndex}>
-                    <img className="product-image" src={plant.image} alt={plant.name} />
-                    <div className="product-title">{plant.name}</div>
-                    <div className="product-description">{plant.description}</div>
-                    <div className="product-cost">{plant.cost}</div>
+                  <div className="product-card" key={plantIndex} style={{ width: 220, border: '1px solid #eee', borderRadius: 8, padding: 12 }}>
+                    <img className="product-image" src={plant.image} alt={plant.name} style={{ width: '100%', height: 140, objectFit: 'cover', borderRadius: 6 }} />
+                    <div className="product-title" style={{ fontWeight: 700, marginTop: 8 }}>{plant.name}</div>
+                    <div className="product-description" style={{ color: '#555', marginTop: 6 }}>{plant.description}</div>
+                    <div className="product-cost" style={{ marginTop: 8, fontWeight: 700 }}>{plant.cost}</div>
                     <button
                       className="product-button"
                       onClick={() => handleAddToCart(plant)}
-                      disabled={addedToCart[plant.name]}
+                      disabled={!!addedToCart[plant.name]}
+                      style={{
+                        marginTop: 10,
+                        padding: '8px 12px',
+                        background: addedToCart[plant.name] ? '#ccc' : '#4CAF50',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: 4,
+                        cursor: addedToCart[plant.name] ? 'not-allowed' : 'pointer'
+                      }}
                     >
                       {addedToCart[plant.name] ? "Added to Cart" : "Add to Cart"}
                     </button>
